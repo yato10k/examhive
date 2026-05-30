@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EXAMHIVE — คลังข้อสอบของคุณ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Landing-only decorations */
+    .hex-deco-wrap {
+      position: absolute; inset: 0;
+      pointer-events: none; overflow: hidden; z-index: 0;
+    }
+    .hdec {
+      position: absolute;
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      background: var(--honey);
+      opacity: 0.07;
+    }
+    .hero, .features-section { position: relative; z-index: 1; }
+    .divider-center {
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--amber);
+      text-transform: uppercase;
+      margin: 60px 0 24px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="navbar-brand">
+      <div class="logo-hex">🐝</div>
+      <span class="logo-text">EXAM<span>HIVE</span></span>
+    </a>
+    <ul class="navbar-nav">
+      <li><a href="login.html" class="btn btn-outline btn-sm">เข้าสู่ระบบ</a></li>
+      <li><a href="register.html" class="btn btn-primary btn-sm">สมัครสมาชิก</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hex-deco-wrap">
+      <div class="hdec" style="width:220px;height:220px;top:-60px;left:-40px;"></div>
+      <div class="hdec" style="width:140px;height:140px;top:40px;right:80px;"></div>
+      <div class="hdec" style="width:100px;height:100px;bottom:-20px;left:60px;"></div>
+      <div class="hdec" style="width:180px;height:180px;bottom:-50px;right:-30px;"></div>
+    </div>
+
+    <div class="hero-badge">🐝 &nbsp;Smarter Practice, Faster Growth</div>
+
+    <div class="hero-hex-logo">🐝</div>
+
+    <h1 class="hero-title">EXAMHIVE</h1>
+    <p class="hero-slogan">สร้างคลังข้อสอบของคุณเอง<br>ฝึกซ้อม จับเวลา ติดตามความก้าวหน้า</p>
+
+    <div class="hero-cta">
+      <a href="register.html" class="btn btn-primary btn-lg">เริ่มใช้งานฟรี</a>
+      <a href="login.html" class="btn btn-outline btn-lg">เข้าสู่ระบบ</a>
+    </div>
+
+    <!-- Quick Stats -->
+    <div style="display:flex; justify-content:center; gap:48px; margin-top:52px; flex-wrap:wrap;">
+      <div style="text-align:center;">
+        <div style="font-size:1.8rem; font-weight:900; color:var(--amber);">500+</div>
+        <div style="font-size:0.83rem; color:var(--muted); font-weight:600;">ข้อสอบในระบบ</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1.8rem; font-weight:900; color:var(--amber);">1,200+</div>
+        <div style="font-size:0.83rem; color:var(--muted); font-weight:600;">ผู้ใช้งาน</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1.8rem; font-weight:900; color:var(--amber);">8,400+</div>
+        <div style="font-size:0.83rem; color:var(--muted); font-weight:600;">รอบที่ทำข้อสอบ</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features-section">
+    <p class="divider-center">ทำไมต้อง EXAMHIVE?</p>
+    <div class="grid-3" style="margin-bottom:0;">
+      <div class="feature-card">
+        <span class="feature-icon">📚</span>
+        <div class="feature-title">สร้างข้อสอบเอง</div>
+        <div class="feature-desc">เพิ่มข้อสอบปรนัย MCQ และจริง-เท็จ ได้ไม่จำกัด จัดเป็นชุดตามหมวดวิชาที่คุณต้องการ</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">⏱️</span>
+        <div class="feature-title">จับเวลาอัตโนมัติ</div>
+        <div class="feature-desc">ตั้งเวลาทำข้อสอบได้ตามต้องการ ฝึกทักษะการบริหารเวลาอย่างมืออาชีพ</div>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📊</span>
+        <div class="feature-title">เก็บประวัติคะแนน</div>
+        <div class="feature-desc">ดูพัฒนาการผ่านคะแนนแต่ละรอบ รู้ว่าข้อไหนยังต้องปรับปรุง และทำซ้ำจนชำนาญ</div>
+      </div>
+    </div>
+
+    <!-- How it works -->
+    <p class="divider-center" style="margin-top:56px;">วิธีใช้งาน 3 ขั้นตอน</p>
+    <div style="display:flex; gap:0; align-items:stretch; position:relative; max-width:700px; margin:0 auto;">
+      <div style="flex:1; text-align:center; padding:28px 16px;">
+        <div style="width:52px;height:52px;background:var(--honey);border-radius:50%;
+             display:flex;align-items:center;justify-content:center;
+             font-size:1.4rem;font-weight:900;color:var(--brown);margin:0 auto 14px;">1</div>
+        <div style="font-weight:800;color:var(--brown);margin-bottom:6px;">สร้างชุดข้อสอบ</div>
+        <div style="font-size:0.84rem;color:var(--muted);">เพิ่มคำถามและตั้งค่าตามต้องการ</div>
+      </div>
+      <div style="display:flex;align-items:center;color:var(--border);font-size:1.5rem;">›</div>
+      <div style="flex:1; text-align:center; padding:28px 16px;">
+        <div style="width:52px;height:52px;background:var(--honey);border-radius:50%;
+             display:flex;align-items:center;justify-content:center;
+             font-size:1.4rem;font-weight:900;color:var(--brown);margin:0 auto 14px;">2</div>
+        <div style="font-weight:800;color:var(--brown);margin-bottom:6px;">เริ่มทำข้อสอบ</div>
+        <div style="font-size:0.84rem;color:var(--muted);">ตอบคำถามพร้อมตัวจับเวลา</div>
+      </div>
+      <div style="display:flex;align-items:center;color:var(--border);font-size:1.5rem;">›</div>
+      <div style="flex:1; text-align:center; padding:28px 16px;">
+        <div style="width:52px;height:52px;background:var(--honey);border-radius:50%;
+             display:flex;align-items:center;justify-content:center;
+             font-size:1.4rem;font-weight:900;color:var(--brown);margin:0 auto 14px;">3</div>
+        <div style="font-weight:800;color:var(--brown);margin-bottom:6px;">ดูผลและพัฒนา</div>
+        <div style="font-size:0.84rem;color:var(--muted);">ตรวจสอบคะแนนและข้อผิดพลาด</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    © 2025 EXAMHIVE — สร้างโดยทีม DSI-205&nbsp;&nbsp;·&nbsp;&nbsp;
+    <a href="login.html">เข้าสู่ระบบ</a>&nbsp;&nbsp;·&nbsp;&nbsp;
+    <a href="register.html">สมัครสมาชิก</a>
+  </footer>
+
+</body>
+</html>
