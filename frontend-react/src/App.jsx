@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-
+import ProtectedRoute from './component/ProtectedRoute';
 import Login from './page/login';
 import Home from './page/home';
 import Dashboard from './page/dashboard';
@@ -19,21 +19,24 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* หน้า public — ไม่ต้อง login ก็เข้าได้ */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/exam-do/:id" element={<ExamDo />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/result" element={<Result />} />
-        <Route path="/create-exam" element={<CreateExam />} />
-        <Route path="/edit-exam/:id" element={<CreateExam />} />
-        <Route path="/favorite" element={<Favorite />} />
-        <Route path="/history" element={<History />} />
-        <Route path="/report" element={<Report />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/edit-profile" element={<EditProfile />} />
-        <Route path="/all-exams" element={<AllExams />} />
-        <Route path="/exam-detail/:id" element={<ExamDetail />} />
+
+        {/* หน้าที่ต้อง login — ครอบด้วย ProtectedRoute */}
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/create-exam" element={<ProtectedRoute><CreateExam /></ProtectedRoute>} />
+        <Route path="/edit-exam/:id" element={<ProtectedRoute><CreateExam /></ProtectedRoute>} />
+        <Route path="/exam-detail/:id" element={<ProtectedRoute><ExamDetail /></ProtectedRoute>} />
+        <Route path="/exam-do/:id" element={<ProtectedRoute><ExamDo /></ProtectedRoute>} />
+        <Route path="/result" element={<ProtectedRoute><Result /></ProtectedRoute>} />
+        <Route path="/all-exams" element={<ProtectedRoute><AllExams /></ProtectedRoute>} />
+        <Route path="/favorite" element={<ProtectedRoute><Favorite /></ProtectedRoute>} />
+        <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+        <Route path="/report" element={<ProtectedRoute><Report /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/edit-profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,10 +1,24 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 function Navbar({ isLoggedIn = false }) {
+  const navigate = useNavigate();   // ← เพิ่ม: ไว้สั่งเด้งหน้า
+
   // ✅ 1. ประกาศ State ให้ครบทั้ง 2 เมนู
   const [showDropdown, setShowDropdown] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  // ← เพิ่ม: อ่านชื่อจริงจาก localStorage
+  const displayName = localStorage.getItem('display_name') || 'ผู้ใช้';
+  const userEmail = localStorage.getItem('email') || '';
+
+  // ← เพิ่ม: ฟังก์ชัน logout ลบ token แล้วเด้งไป login
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('display_name');
+    setShowProfileMenu(false);
+    navigate('/login');
+  };
 
   // ฟังก์ชันสลับเปิด/ปิด Dropdown หมวดวิชา
   const toggleDropdown = (e) => {
@@ -47,7 +61,7 @@ function Navbar({ isLoggedIn = false }) {
         <ul className="navbar-nav">
           <li><Link to="/history">ประวัติคะแนน</Link></li>
           <li><Link to="/favorite">ข้อสอบที่บันทึกไว้ </Link></li>
-          
+
           {/* โปรไฟล์น้องเฌอ (แบบ Dropdown Menu) */}
           <li style={{ position: 'relative' }}>
 
@@ -64,14 +78,14 @@ function Navbar({ isLoggedIn = false }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontWeight: '700', color: 'var(--brown)', fontSize: '1rem' }}>
-                  น้องเฌอ
+                  {displayName}
                 </span>
               </div>
             </div>
 
             {/* กล่อง Dropdown โปรไฟล์ */}
             {showProfileMenu && (
-              <div 
+              <div
                 onClick={(e) => e.stopPropagation()} // ป้องกันกดข้างในแล้วเมนูปิด
                 style={{
                   position: 'absolute',
@@ -84,7 +98,7 @@ function Navbar({ isLoggedIn = false }) {
                   zIndex: 100,
                   border: '1px solid var(--border)',
                   overflow: 'hidden'
-              }}>
+                }}>
 
                 {/* ส่วนหัว: รูป ชื่อ อีเมล */}
                 <div style={{ padding: '20px 16px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '16px', alignItems: 'center' }}>
@@ -93,10 +107,10 @@ function Navbar({ isLoggedIn = false }) {
                   </div>
                   <div style={{ overflow: 'hidden' }}>
                     <div style={{ fontWeight: '700', color: 'var(--brown)', fontSize: '1.1rem', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      น้องเฌอ
+                      {displayName}
                     </div>
                     <div style={{ fontSize: '0.85rem', color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      cher.dsi@student.kmutt...
+                      {userEmail}
                     </div>
                   </div>
                 </div>
@@ -109,9 +123,9 @@ function Navbar({ isLoggedIn = false }) {
 
                   <div style={{ height: '1px', background: 'var(--border)', margin: '4px 0' }}></div>
 
-                  <Link to="/login" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 20px', textDecoration: 'none', color: '#ef4444', fontWeight: '600' }} onClick={() => setShowProfileMenu(false)}>
-                    <span style={{ fontSize: '1.2rem' }}></span> <span>Log out</span>
-                  </Link>
+                  <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 20px', width: '100%', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', color: '#ef4444', fontWeight: '600', fontSize: '1rem' }}>
+                    <span style={{ fontSize: '1.2rem' }}>🚪</span> <span>Log out</span>
+                  </button>
                 </div>
 
               </div>
@@ -124,7 +138,7 @@ function Navbar({ isLoggedIn = false }) {
 
         // ✅ 3. โค้ดสำหรับคนที่ยังไม่ได้ล็อกอิน (มี Dropdown หมวดวิชา)
         <ul className="navbar-nav" style={{ alignItems: 'center' }}>
-          
+
           <li style={{ position: 'relative', marginRight: '16px' }}>
             <span
               onClick={toggleDropdown}

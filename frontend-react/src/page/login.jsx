@@ -45,6 +45,7 @@ function Login() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify({ id: data.user_id, email: formData.email, display_name: data.display_name, role: data.role }));
       localStorage.setItem('display_name', data.display_name);
+      localStorage.setItem('email', data.email);
       navigate('/dashboard', { state: { display_name: data.display_name } });
     } catch {
       setError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
