@@ -2,7 +2,7 @@ CREATE DATABASE  IF NOT EXISTS `st68x25db` /*!40100 DEFAULT CHARACTER SET utf8mb
 USE `st68x25db`;
 -- MySQL dump 10.13  Distrib 8.0.46, for Win64 (x86_64)
 --
--- Host: localhost    Database: examhive
+-- Host: localhost    Database: st68x25db
 -- ------------------------------------------------------
 -- Server version	8.0.46
 
@@ -99,6 +99,7 @@ CREATE TABLE `exam_sets` (
   `license_tag` varchar(50) DEFAULT NULL,
   `status` enum('draft','pending','approved') NOT NULL DEFAULT 'draft',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `duration` int DEFAULT '30',
   PRIMARY KEY (`id`),
   KEY `owner_id` (`owner_id`),
   KEY `subject_id` (`subject_id`),
