@@ -46,10 +46,11 @@ function CreateExam() {
   const [examSetId, setExamSetId] = useState(null);
   const [fetching, setFetching] = useState(false);
 
-  // 3. State สำหรับคำถาม
+  // 3. State สำหรับคำถาม — supports type: 'mcq' or 'tf'
   const [questions, setQuestions] = useState([
     {
       id: 1,
+      type: 'mcq',
       stem: '',
       choices: [
         { id: 1, text: '', is_correct: false },
@@ -63,7 +64,7 @@ function CreateExam() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // 3. Load exam data in edit mode
+  // 4. Load exam data in edit mode
   useEffect(() => {
     if (!id) return;
 
@@ -108,22 +109,32 @@ function CreateExam() {
         // Set questions
         const safeQuestionsData = Array.isArray(questionsData) ? questionsData : (questionsData.questions || []);
         if (safeQuestionsData.length > 0) {
-          setQuestions(safeQuestionsData.map((q, idx) => ({
-            id: idx + 1,
-            stem: q.stem || '',
-            choices: q.choices && q.choices.length > 0
+          setQuestions(safeQuestionsData.map((q, idx) => {
+            const questionType = q.type === 'tf' ? 'tf' : 'mcq';
+            const choices = q.choices && q.choices.length > 0
               ? q.choices.map((c, cIdx) => ({
                   id: cIdx + 1,
                   text: c.text || '',
-                  is_correct: c.is_correct || false
+                  is_correct: Boolean(c.is_correct)
                 }))
-              : [
-                  { id: 1, text: '', is_correct: false },
-                  { id: 2, text: '', is_correct: false },
-                  { id: 3, text: '', is_correct: false },
-                  { id: 4, text: '', is_correct: false }
-                ]
-          })));
+              : questionType === 'tf'
+                ? [
+                    { id: 1, text: 'True', is_correct: false },
+                    { id: 2, text: 'False', is_correct: false }
+                  ]
+                : [
+                    { id: 1, text: '', is_correct: false },
+                    { id: 2, text: '', is_correct: false },
+                    { id: 3, text: '', is_correct: false },
+                    { id: 4, text: '', is_correct: false }
+                  ];
+            return {
+              id: idx + 1,
+              type: questionType,
+              stem: q.stem || '',
+              choices
+            };
+          }));
         }
       } catch {
         setError('ไม่สามารถดึงข้อมูลชุดข้อสอบได้');
@@ -135,7 +146,7 @@ function CreateExam() {
     fetchExamData();
   }, [id]);
 
-  // 4. Handler functions
+  // 5. Handler functions
   const handleQuestionChange = (questionId, field, value) => {
     setQuestions(questions.map(q =>
       q.id === questionId ? { ...q, [field]: value } : q
@@ -158,18 +169,54 @@ function CreateExam() {
     }));
   };
 
-  const addQuestion = () => {
+  // Change question type
+  const handleQuestionTypeChange = (questionId, newType) => {
+    setQuestions(questions.map(q => {
+      if (q.id !== questionId) return q;
+      if (newType === 'tf') {
+        return {
+          ...q,
+          type: 'tf',
+          choices: [
+            { id: 1, text: 'True', is_correct: false },
+            { id: 2, text: 'False', is_correct: false }
+          ]
+        };
+      } else {
+        return {
+          ...q,
+          type: 'mcq',
+          choices: [
+            { id: 1, text: '', is_correct: false },
+            { id: 2, text: '', is_correct: false },
+            { id: 3, text: '', is_correct: false },
+            { id: 4, text: '', is_correct: false }
+          ]
+        };
+      }
+    }));
+  };
+
+  // Add new question with type selector
+  const addQuestion = (type = 'mcq') => {
     const newId = Math.max(...questions.map(q => q.id), 0) + 1;
-    setQuestions([...questions, {
+    const newQuestion = {
       id: newId,
+      type,
       stem: '',
-      choices: [
-        { id: 1, text: '', is_correct: false },
-        { id: 2, text: '', is_correct: false },
-        { id: 3, text: '', is_correct: false },
-        { id: 4, text: '', is_correct: false }
-      ]
-    }]);
+      choices: type === 'tf'
+        ? [
+            { id: 1, text: 'True', is_correct: false },
+            { id: 2, text: 'False', is_correct: false }
+          ]
+        : [
+            { id: 1, text: '', is_correct: false },
+            { id: 2, text: '', is_correct: false },
+            { id: 3, text: '', is_correct: false },
+            { id: 4, text: '', is_correct: false }
+          ]
+    };
+    setQuestions([...questions, newQuestion]);
   };
 
   const removeQuestion = (questionId) => {
@@ -190,7 +237,6 @@ function CreateExam() {
       return;
     }
 
-    // ในโหมดแก้ไข ข้ามการตรวจสอบหมวดหมู่ (เพราะอาจไม่เปลี่ยน)
     if (!isEditMode) {
       if (!mainCategory) {
         setError('กรุณาเลือกหมวดวิชาหลัก');
@@ -236,13 +282,15 @@ function CreateExam() {
           description,
           subject_name: subCategory,
           duration,
-          questions: validQuestions.map(q => ({
+          questions: validQuestions.map((q, qIdx) => ({
             stem: q.stem,
-            type: 'mcq',
-            choices: q.choices.filter(c => c.text.trim() !== '').map(c => ({
-              text: c.text,
-              is_correct: c.is_correct
-            }))
+            type: q.type,
+            choices: q.type === 'tf'
+              ? q.choices.map(c => ({ text: c.text, is_correct: c.is_correct }))
+              : q.choices.filter(c => c.text.trim() !== '').map(c => ({
+                  text: c.text,
+                  is_correct: c.is_correct
+                }))
           }))
         })
       });
@@ -293,7 +341,7 @@ function CreateExam() {
               <button className="btn btn-outline" onClick={handleSubmit} disabled={loading}>
                 {loading ? 'กำลังบันทึก...' : 'บันทึกฉบับร่าง'}
               </button>
-              <button className="btn btn-primary" onClick={(e) => handleSubmit(e, false)} disabled={loading}>
+              <button className="btn btn-primary" onClick={handleSubmit} disabled={loading}>
                 เผยแพร่ข้อสอบ
               </button>
             </div>
@@ -395,8 +443,28 @@ function CreateExam() {
 
             {questions.map((question, qIndex) => (
               <div key={question.id} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '20px', marginBottom: '16px', background: 'var(--bg)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <span style={{ fontWeight: '700', color: 'var(--brown)' }}>ข้อที่ {qIndex + 1}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontWeight: '700', color: 'var(--brown)' }}>ข้อที่ {qIndex + 1}</span>
+                    {/* Question Type Selector */}
+                    <select
+                      value={question.type}
+                      onChange={(e) => handleQuestionTypeChange(question.id, e.target.value)}
+                      style={{
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border)',
+                        background: 'white',
+                        fontSize: '0.8rem',
+                        fontWeight: '600',
+                        color: 'var(--brown)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="mcq">ปรนัย (MCQ)</option>
+                      <option value="tf">จริง/เท็จ (T/F)</option>
+                    </select>
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeQuestion(question.id)}
@@ -416,40 +484,100 @@ function CreateExam() {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  {question.choices.map((choice, cIndex) => (
-                    <div key={choice.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input
-                        type="radio"
-                        name={`correct-${question.id}`}
-                        checked={choice.is_correct}
-                        onChange={() => handleChoiceChange(question.id, choice.id, 'is_correct', true)}
-                        style={{ accentColor: 'var(--honey)', width: '18px', height: '18px', flexShrink: 0 }}
-                      />
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder={`ตัวเลือก ${['ก', 'ข', 'ค', 'ง'][cIndex]}`}
-                        value={choice.text}
-                        onChange={(e) => handleChoiceChange(question.id, choice.id, 'text', e.target.value)}
-                        style={choice.is_correct ? { border: '2px solid var(--amber)' } : {}}
-                      />
-                    </div>
-                  ))}
+                {/* MCQ: 4 choices */}
+                {question.type === 'mcq' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {question.choices.map((choice, cIndex) => (
+                      <div key={choice.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <input
+                          type="radio"
+                          name={`correct-${question.id}`}
+                          checked={choice.is_correct}
+                          onChange={() => handleChoiceChange(question.id, choice.id, 'is_correct', true)}
+                          style={{ accentColor: 'var(--honey)', width: '18px', height: '18px', flexShrink: 0 }}
+                        />
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder={`ตัวเลือก ${['ก', 'ข', 'ค', 'ง'][cIndex]}`}
+                          value={choice.text}
+                          onChange={(e) => handleChoiceChange(question.id, choice.id, 'text', e.target.value)}
+                          style={choice.is_correct ? { border: '2px solid var(--amber)' } : {}}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* T/F: True/False options */}
+                {question.type === 'tf' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {question.choices.map((choice, cIndex) => {
+                      const labels = ['True ✓', 'False ✗'];
+                      const colors = ['#16a34a', '#dc2626'];
+                      return (
+                        <div
+                          key={choice.id}
+                          onClick={() => handleChoiceChange(question.id, choice.id, 'is_correct', true)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '12px',
+                            padding: '14px 20px',
+                            border: `2px solid ${choice.is_correct ? colors[cIndex] : 'var(--border)'}`,
+                            background: choice.is_correct ? `${colors[cIndex]}15` : 'white',
+                            borderRadius: 'var(--radius-sm)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <div style={{
+                            width: '28px', height: '28px', borderRadius: '50%',
+                            border: `2px solid ${choice.is_correct ? colors[cIndex] : 'var(--border)'}`,
+                            background: choice.is_correct ? colors[cIndex] : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: 'white', fontSize: '0.9rem', fontWeight: '800',
+                            flexShrink: 0
+                          }}>
+                            {choice.is_correct ? '✓' : ''}
+                          </div>
+                          <div style={{
+                            fontSize: '1.1rem', fontWeight: '700',
+                            color: choice.is_correct ? colors[cIndex] : 'var(--brown)'
+                          }}>
+                            {labels[cIndex]}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '8px' }}>
+                  {question.type === 'mcq'
+                    ? '* เลือกวงกลมด้านหน้าเพื่อกำหนดเป็นคำตอบที่ถูกต้อง'
+                    : '* คลิกเลือกคำตอบที่ถูกต้อง'}
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '8px' }}>* เลือกวงกลมด้านหน้าเพื่อกำหนดเป็นคำตอบที่ถูกต้อง</div>
               </div>
             ))}
 
-            {/* ปุ่มเพิ่มข้อ */}
-            <button
-              type="button"
-              className="btn btn-outline btn-full"
-              style={{ borderStyle: 'dashed', padding: '16px', color: 'var(--brown)' }}
-              onClick={addQuestion}
-            >
-              + เพิ่มคำถามใหม่
-            </button>
+            {/* Add Question Buttons */}
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+              <button
+                type="button"
+                className="btn btn-outline"
+                style={{ flex: 1, padding: '12px', color: 'var(--brown)', borderStyle: 'dashed' }}
+                onClick={() => addQuestion('mcq')}
+              >
+                + เพิ่มคำถามปรนัย (MCQ)
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline"
+                style={{ flex: 1, padding: '12px', color: 'var(--brown)', borderStyle: 'dashed' }}
+                onClick={() => addQuestion('tf')}
+              >
+                + เพิ่มคำถามจริง/เท็จ (T/F)
+              </button>
+            </div>
           </div>
 
         </div>

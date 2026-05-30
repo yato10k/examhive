@@ -73,7 +73,7 @@ function Navbar({ isLoggedIn = false }) {
             >
               <div style={{ position: 'relative' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--amber)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '1.2rem' }}>
-                  ช
+                  {displayName.charAt(0)}
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -103,7 +103,7 @@ function Navbar({ isLoggedIn = false }) {
                 {/* ส่วนหัว: รูป ชื่อ อีเมล */}
                 <div style={{ padding: '20px 16px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '16px', alignItems: 'center' }}>
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--amber)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '1.5rem', flexShrink: 0 }}>
-                    ช
+                    {displayName.charAt(0)}
                   </div>
                   <div style={{ overflow: 'hidden' }}>
                     <div style={{ fontWeight: '700', color: 'var(--brown)', fontSize: '1.1rem', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -167,9 +167,9 @@ function Navbar({ isLoggedIn = false }) {
                   padding: '8px 0', minWidth: '160px', zIndex: 10
                 }}
               >
-                <Link to="#" onClick={() => setShowDropdown(false)} style={{ display: 'block', padding: '10px 20px', color: 'var(--brown)', textDecoration: 'none', fontWeight: 500 }}>📝 TGAT</Link>
-                <Link to="#" onClick={() => setShowDropdown(false)} style={{ display: 'block', padding: '10px 20px', color: 'var(--brown)', textDecoration: 'none', fontWeight: 500 }}>🧠 TPAT</Link>
-                <Link to="#" onClick={() => setShowDropdown(false)} style={{ display: 'block', padding: '10px 20px', color: 'var(--brown)', textDecoration: 'none', fontWeight: 500 }}>📚 A-Level</Link>
+                <Link to="/all-exams?category=TGAT" onClick={() => setShowDropdown(false)} style={{ display: 'block', padding: '10px 20px', color: 'var(--brown)', textDecoration: 'none', fontWeight: 500 }}>📝 TGAT</Link>
+                <Link to="/all-exams?category=TPAT" onClick={() => setShowDropdown(false)} style={{ display: 'block', padding: '10px 20px', color: 'var(--brown)', textDecoration: 'none', fontWeight: 500 }}>🧠 TPAT</Link>
+                <Link to="/all-exams?category=A-LEVEL" onClick={() => setShowDropdown(false)} style={{ display: 'block', padding: '10px 20px', color: 'var(--brown)', textDecoration: 'none', fontWeight: 500 }}>📚 A-Level</Link>
               </div>
             )}
           </li>

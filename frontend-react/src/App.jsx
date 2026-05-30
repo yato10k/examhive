@@ -34,7 +34,7 @@ function App() {
         <Route path="/all-exams" element={<ProtectedRoute><AllExams /></ProtectedRoute>} />
         <Route path="/favorite" element={<ProtectedRoute><Favorite /></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
-        <Route path="/report" element={<ProtectedRoute><Report /></ProtectedRoute>} />
+        <Route path="/report/:id" element={<ProtectedRoute><Report /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/edit-profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
       </Routes>

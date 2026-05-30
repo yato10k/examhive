@@ -5,11 +5,16 @@ import AnimatedPage from '../component/AnimatedPage';
 
 function EditProfile() {
   const navigate = useNavigate();
-  const [displayName, setDisplayName] = useState(localStorage.getItem('display_name') || 'น้องเฌอ');
+  const [displayName, setDisplayName] = useState(localStorage.getItem('display_name') || 'ผู้ใช้');
   const [email] = useState(localStorage.getItem('email') || '');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
 
+  // Theme and language state
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'auto');
+  const [language, setLanguage] = useState(localStorage.getItem('language') || 'th');
+
+  // Handle save profile
   const handleSave = async () => {
     if (!displayName.trim()) {
       setSuccess('กรุณากรอกชื่อที่ใช้แสดง');
@@ -25,7 +30,7 @@ function EditProfile() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ display_name: displayName })
       });
@@ -33,10 +38,9 @@ function EditProfile() {
       const data = await res.json();
 
       if (res.ok) {
-        // อัปเดต localStorage
         localStorage.setItem('display_name', displayName);
         setSuccess('บันทึกข้อมูลโปรไฟล์เรียบร้อย! ✨');
-        setTimeout(() => navigate('/dashboard'), 1500);
+        setTimeout(() => navigate('/profile'), 1500);
       } else {
         setSuccess(data.message || 'ไม่สามารถบันทึกได้');
       }
@@ -44,6 +48,48 @@ function EditProfile() {
       setSuccess('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle theme change
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    // Apply theme (basic implementation)
+    document.documentElement.setAttribute('data-theme', newTheme === 'dark' ? 'dark' : 'light');
+  };
+
+  // Handle language change
+  const handleLanguageChange = (newLang) => {
+    setLanguage(newLang);
+    localStorage.setItem('language', newLang);
+  };
+
+  // Handle delete account
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      '🚨 คำเตือน: คุณแน่ใจหรือไม่ว่าต้องการลบบัญชี?\n\nข้อมูลทั้งหมดจะหายไปและไม่สามารถกู้คืนได้!'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/me/account', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        alert('บัญชีของคุณถูกลบออกจากระบบแล้ว 🐝');
+        localStorage.clear();
+        navigate('/login');
+      } else {
+        const data = await res.json();
+        alert(data.message || 'ไม่สามารถลบบัญชีได้');
+      }
+    } catch {
+      alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
     }
   };
 
@@ -60,11 +106,11 @@ function EditProfile() {
             </h1>
           </div>
 
-          {/* =======================================
-              โซนที่ 1: Profile Information
-              ======================================= */}
+          {/* Profile Information */}
           <div className="card" style={{ padding: '32px', marginBottom: '32px' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--brown)', marginBottom: '24px' }}>Profile Information</h2>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--brown)', marginBottom: '24px' }}>
+              Profile Information
+            </h2>
 
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <div style={{
@@ -102,7 +148,13 @@ function EditProfile() {
 
             <div className="form-group">
               <label className="form-label">อีเมล (ไม่สามารถเปลี่ยนได้)</label>
-              <input type="email" className="form-control" value={email} disabled style={{ background: '#f5f5f5', cursor: 'not-allowed' }} />
+              <input
+                type="email"
+                className="form-control"
+                value={email}
+                disabled
+                style={{ background: '#f5f5f5', cursor: 'not-allowed' }}
+              />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
@@ -117,17 +169,22 @@ function EditProfile() {
             </div>
           </div>
 
-          {/* =======================================
-              โซนที่ 2: Appearance (ตามที่ขอมา!)
-              ======================================= */}
-          <h2 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--brown)', marginBottom: '16px' }}>Appearance</h2>
+          {/* Appearance */}
+          <h2 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--brown)', marginBottom: '16px' }}>
+            Appearance
+          </h2>
 
           <div className="card" style={{ padding: '0', marginBottom: '40px', overflow: 'hidden' }}>
 
             {/* Theme Dropdown */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px', borderBottom: '1px solid var(--border)' }}>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '24px', borderBottom: '1px solid var(--border)'
+            }}>
               <div style={{ fontWeight: '600', color: 'var(--brown)' }}>Theme</div>
               <select
+                value={theme}
+                onChange={(e) => handleThemeChange(e.target.value)}
                 style={{
                   background: '#f8fafc', border: 'none', padding: '10px 16px', borderRadius: '8px',
                   fontWeight: '600', color: 'var(--brown)', cursor: 'pointer', outline: 'none'
@@ -140,30 +197,39 @@ function EditProfile() {
             </div>
 
             {/* Language Dropdown */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px' }}>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '24px'
+            }}>
               <div style={{ fontWeight: '600', color: 'var(--brown)' }}>Language</div>
               <select
+                value={language}
+                onChange={(e) => handleLanguageChange(e.target.value)}
                 style={{
                   background: '#f8fafc', border: 'none', padding: '10px 16px', borderRadius: '8px',
                   fontWeight: '600', color: 'var(--brown)', cursor: 'pointer', outline: 'none'
                 }}
               >
-                <option value="en">English (UK)</option>
                 <option value="th">ภาษาไทย (Thai)</option>
+                <option value="en">English (UK)</option>
               </select>
             </div>
 
           </div>
 
-          {/* =======================================
-              โซนที่ 3: Danger Zone (ลบบัญชี)
-              ======================================= */}
+          {/* Danger Zone */}
           <div className="card" style={{ padding: '24px', border: '1px solid #fecaca' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              flexWrap: 'wrap', gap: '16px'
+            }}>
               <div style={{ flex: '1', minWidth: '200px' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1f2937', margin: '0 0 4px 0' }}>Delete your account</h3>
-                <p style={{ color: '#6b7280', margin: 0, fontSize: '0.9rem' }}>This will delete all your data and cannot be undone.</p>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1f2937', margin: '0 0 4px 0' }}>
+                  Delete your account
+                </h3>
+                <p style={{ color: '#6b7280', margin: 0, fontSize: '0.9rem' }}>
+                  This will delete all your data and cannot be undone.
+                </p>
               </div>
 
               <button
@@ -173,16 +239,10 @@ function EditProfile() {
                 }}
                 onMouseOver={(e) => e.target.style.background = '#991b1b'}
                 onMouseOut={(e) => e.target.style.background = '#b91c1c'}
-                onClick={() => {
-                  if (window.confirm('🚨 คำเตือน: คุณแน่ใจหรือไม่ว่าต้องการลบบัญชี? \n\nข้อมูลทั้งหมดจะหายไปและไม่สามารถกู้คืนได้!')) {
-                    alert('บัญชีของคุณถูกลบออกจากระบบแล้ว 🐝');
-                    window.location.href = '/login';
-                  }
-                }}
+                onClick={handleDeleteAccount}
               >
                 Delete account
               </button>
-
             </div>
           </div>
 

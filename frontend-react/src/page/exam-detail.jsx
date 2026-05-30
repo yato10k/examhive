@@ -182,25 +182,8 @@ function ExamDetail() {
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                   <Link to={`/exam-do/${id}`} className="btn btn-primary" style={{ padding: '10px 24px', fontSize: '1.05rem' }}>▶ เริ่มทำข้อสอบ</Link>
                   
-                  {/* ปุ่มแก้ไข: Hover แล้วเป็นสีเหลืองอ่อน */}
-                  <Link 
-                    to={`/edit-exam/${id}`} 
-                    className="btn" 
-                    style={{ 
-                      padding: '10px 24px', 
-                      background: 'transparent',
-                      border: '1.5px solid var(--amber)',
-                      color: 'var(--brown)',
-                      fontWeight: '600',
-                      borderRadius: '8px',
-                      textDecoration: 'none',
-                      transition: 'background-color 0.4s'
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fef3c7'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    ✏️ แก้ไข
-                  </Link>
+                  <Link to={`/edit-exam/${id}`} className="btn btn-outline">✏️ แก้ไข</Link>
+                  <button className="btn btn-outline" style={{ color: '#d97706', borderColor: '#fca5a5' }} onClick={() => navigate(`/report/${id}`)}>🚩 รายงานปัญหา</button>
                   
                   {/* ปุ่มลบ: Hover แล้วเป็นสีแดงอ่อน */}
                   <button
@@ -324,14 +307,14 @@ function ExamDetail() {
                     className="form-control"
                     style={{ fontSize: '0.85rem', padding: '10px' }}
                     type="text"
-                    defaultValue={`examhive.app/exam/${id}`}
+                    defaultValue={`${window.location.origin}/exam/${id}`}
                     readOnly
                   />
                   <button
                     className="btn btn-outline"
                     style={{ padding: '0 16px' }}
                     onClick={() => {
-                      navigator.clipboard.writeText(`examhive.app/exam/${id}`);
+                      navigator.clipboard.writeText(`${window.location.origin}/exam/${id}`);
                       alert('คัดลอกลิงก์เรียบร้อยแล้ว!');
                     }}
                   >

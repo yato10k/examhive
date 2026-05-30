@@ -1,22 +1,97 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../component/Navbar';
 import AnimatedPage from '../component/AnimatedPage';
 
 function Favorite() {
-  // จำลอง State สำหรับจัดการการกดหัวใจ (เอาออกจากการบันทึก)
-  const [favorites, setFavorites] = useState([1, 2]); // สมมติว่ามีข้อสอบ id 1 กับ 2 ที่กดไลก์ไว้
+  // Favorites stored as array of exam IDs
+  const [favoriteIds, setFavoriteIds] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
-  const toggleFavorite = (e, id) => {
-    e.preventDefault(); // ป้องกันไม่ให้คลิกหัวใจแล้วเด้งไปหน้า Exam Detail
-    
-    // ถ้ามีอยู่แล้วให้เอาออก ถ้าไม่มีให้ใส่เพิ่ม
-    if (favorites.includes(id)) {
-      setFavorites(favorites.filter(favId => favId !== id));
+  // Fetch all exams and user's favorites on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) { setLoading(false); return; }
+
+      try {
+        // Fetch all exam sets
+        const examRes = await fetch('/api/exam-sets', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const examData = await examRes.json();
+
+        if (Array.isArray(examData)) {
+          setExams(examData);
+
+          // Fetch user's favorites if endpoint exists
+          try {
+            const favRes = await fetch('/api/me/favorites', {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            const favData = await favRes.json();
+            if (Array.isArray(favData)) {
+              setFavoriteIds(favData.map(f => f.exam_set_id || f.id));
+            }
+          } catch {
+            // If /api/me/favorites doesn't exist, use localStorage or empty
+            const stored = localStorage.getItem('favorites');
+            if (stored) {
+              setFavoriteIds(JSON.parse(stored));
+            }
+          }
+        }
+      } catch {
+        // Handle error silently
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Toggle favorite
+  const toggleFavorite = async (e, examId) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const token = localStorage.getItem('token');
+    const isFav = favoriteIds.includes(examId);
+
+    // Optimistic UI update
+    if (isFav) {
+      setFavoriteIds(prev => prev.filter(id => id !== examId));
     } else {
-      setFavorites([...favorites, id]);
+      setFavoriteIds(prev => [...prev, examId]);
+    }
+
+    // Persist to localStorage as backup
+    const newFavs = isFav
+      ? favoriteIds.filter(id => id !== examId)
+      : [...favoriteIds, examId];
+    localStorage.setItem('favorites', JSON.stringify(newFavs));
+
+    // Try to sync with backend
+    try {
+      const method = isFav ? 'DELETE' : 'POST';
+      await fetch(`/api/me/favorites/${examId}`, {
+        method,
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch {
+      // Silently fail - localStorage already updated
     }
   };
+
+  // Filter exams to only show favorites
+  const favoriteExams = exams.filter(exam =>
+    favoriteIds.includes(exam.id) &&
+    (exam.title?.toLowerCase().includes(search.toLowerCase()) ||
+     exam.description?.toLowerCase().includes(search.toLowerCase()))
+  );
 
   return (
     <>
@@ -24,82 +99,76 @@ function Favorite() {
 
       <AnimatedPage>
         <div className="page-wrapper">
-          
+
           <div className="page-header" style={{ marginBottom: '32px' }}>
             <div>
-              <h1 className="page-title">ข้อสอบที่บันทึกไว้ </h1>
+              <h1 className="page-title">ข้อสอบที่บันทึกไว้</h1>
               <p className="page-subtitle">ชุดข้อสอบที่คุณชื่นชอบและเก็บไว้ฝึกซ้อมในภายหลัง</p>
             </div>
-            
-            {/* กล่องค้นหา */}
+
+            {/* Search */}
             <div style={{ display: 'flex', gap: '8px' }}>
-              <input type="text" className="form-control" placeholder="ค้นหาชุดข้อสอบ..." style={{ width: '250px' }} />
-              <button className="btn btn-outline">ค้นหา</button>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="ค้นหาชุดข้อสอบ..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ width: '250px' }}
+              />
             </div>
           </div>
 
-          {favorites.length === 0 ? (
-            // กรณีไม่มีข้อสอบที่บันทึกไว้
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🐝</div>
+              <p style={{ color: 'var(--muted)' }}>กำลังโหลด...</p>
+            </div>
+          ) : favoriteExams.length === 0 ? (
+            /* Empty State */
             <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
               <div style={{ fontSize: '4rem', marginBottom: '16px' }}>📭</div>
-              <h2 style={{ fontSize: '1.2rem', color: 'var(--brown)', marginBottom: '8px' }}>ยังไม่มีข้อสอบที่บันทึกไว้</h2>
-              <p style={{ color: 'var(--muted)', marginBottom: '24px' }}>ลองค้นหาข้อสอบที่คุณสนใจแล้วกดรูปหัวใจเพื่อบันทึกเก็บไว้ดูสิ!</p>
+              <h2 style={{ fontSize: '1.2rem', color: 'var(--brown)', marginBottom: '8px' }}>
+                {search ? 'ไม่พบข้อสอบที่ค้นหา' : 'ยังไม่มีข้อสอบที่บันทึกไว้'}
+              </h2>
+              <p style={{ color: 'var(--muted)', marginBottom: '24px' }}>
+                {search ? 'ลองเปลี่ยนคำค้นหา' : 'ลองค้นหาข้อสอบที่คุณสนใจแล้วกดรูปหัวใจเพื่อบันทึกเก็บไว้ดูสิ!'}
+              </p>
               <Link to="/dashboard" className="btn btn-primary">ไปที่คลังข้อสอบ</Link>
             </div>
           ) : (
-            // กรณีมีข้อสอบ (แสดงเป็น Grid แบบเดียวกับ Dashboard)
+            /* Favorite Exam Grid */
             <div className="grid-4">
-              
-              {/* Card 1 */}
-              {favorites.includes(1) && (
-                <Link to="/exam-detail" className="exam-card" style={{ position: 'relative' }}>
-                  {/* ปุ่มหัวใจ */}
-                  <button 
-                    onClick={(e) => toggleFavorite(e, 1)}
-                    style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', zIndex: 2, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
+              {favoriteExams.map((exam) => (
+                <Link
+                  key={exam.id}
+                  to={`/exam-detail/${exam.id}`}
+                  className="exam-card"
+                  style={{ position: 'relative' }}
+                >
+                  {/* Heart Button */}
+                  <button
+                    onClick={(e) => toggleFavorite(e, exam.id)}
+                    style={{
+                      position: 'absolute', top: '16px', right: '16px',
+                      background: 'none', border: 'none', fontSize: '1.4rem',
+                      cursor: 'pointer', zIndex: 2,
+                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+                    }}
                   >
                     ❤️
                   </button>
 
-                  <div className="exam-card-icon">🅰️</div>
-                  <div className="exam-card-subject">ภาษาไทย</div>
-                  <div className="exam-card-title">ภาษาไทยเบื้องต้น</div>
-                  <div className="exam-card-desc">การสะกดคำ คำพ้องความหมาย สุภาษิตและสำนวนไทย</div>
+                  <div className="exam-card-icon">📝</div>
+                  <div className="exam-card-subject">{exam.subject_name || 'ไม่ระบุ'}</div>
+                  <div className="exam-card-title">{exam.title || 'ไม่มีชื่อ'}</div>
+                  <div className="exam-card-desc">{exam.description || 'ไม่มีคำอธิบาย'}</div>
                   <div className="exam-card-meta">
-                    <span>📝 12 ข้อ</span>
-                    <span>⏱️ 10 นาที</span>
-                  </div>
-                  <div style={{ marginTop: '16px', fontSize: '0.8rem', color: 'var(--muted)' }}>
-                    👤 สร้างโดย: คุณครูสมใจ
+                    <span>📝 {exam.question_count || 0} ข้อ</span>
+                    <span>⏱️ {exam.duration || 0} นาที</span>
                   </div>
                 </Link>
-              )}
-
-              {/* Card 2 */}
-              {favorites.includes(2) && (
-                <Link to="/exam-detail" className="exam-card" style={{ position: 'relative' }}>
-                  {/* ปุ่มหัวใจ */}
-                  <button 
-                    onClick={(e) => toggleFavorite(e, 2)}
-                    style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', zIndex: 2, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}
-                  >
-                    ❤️
-                  </button>
-
-                  <div className="exam-card-icon">🌍</div>
-                  <div className="exam-card-subject">ทั่วไป</div>
-                  <div className="exam-card-title">ความรู้รอบตัวทั่วไป</div>
-                  <div className="exam-card-desc">ภูมิศาสตร์ ประวัติศาสตร์ วิทยาศาสตร์ทั่วไป และสังคมศึกษาเบื้องต้น</div>
-                  <div className="exam-card-meta">
-                    <span>📝 20 ข้อ</span>
-                    <span>⏱️ 15 นาที</span>
-                  </div>
-                  <div style={{ marginTop: '16px', fontSize: '0.8rem', color: 'var(--muted)' }}>
-                    👤 สร้างโดย: แอดมิน
-                  </div>
-                </Link>
-              )}
-
+              ))}
             </div>
           )}
 

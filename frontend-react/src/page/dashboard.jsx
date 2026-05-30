@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../component/Navbar';
 import AnimatedPage from '../component/AnimatedPage';
 
 function Dashboard() {
     const location = useLocation();
+    const navigate = useNavigate();
     const [userName, setUserName] = useState(location.state?.display_name || localStorage.getItem('display_name') || 'น้องเฌอ');
 
     // State สำหรับข้อมูลที่จะมาจาก API
@@ -16,7 +17,39 @@ function Dashboard() {
     });
     const [examSets, setExamSets] = useState([]);
     const [recentActivity, setRecentActivity] = useState([]);
+    const [favoriteIds, setFavoriteIds] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // Toggle favorite
+    const toggleFavorite = (e, examId) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const token = localStorage.getItem('token');
+        const isFav = favoriteIds.includes(examId);
+
+        // Optimistic UI update
+        if (isFav) {
+            setFavoriteIds(prev => prev.filter(id => id !== examId));
+        } else {
+            setFavoriteIds(prev => [...prev, examId]);
+        }
+
+        // Persist to localStorage
+        const newFavs = isFav
+            ? favoriteIds.filter(id => id !== examId)
+            : [...favoriteIds, examId];
+        localStorage.setItem('favorites', JSON.stringify(newFavs));
+
+        // Sync with backend
+        try {
+            const method = isFav ? 'DELETE' : 'POST';
+            fetch(`/api/me/favorites/${examId}`, {
+                method,
+                headers: { Authorization: `Bearer ${token}` }
+            });
+        } catch {}
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -76,6 +109,14 @@ function Dashboard() {
                         }));
                     }
                 }
+
+                // ดึง favorites
+                try {
+                    const storedFavs = localStorage.getItem('favorites');
+                    if (storedFavs) {
+                        setFavoriteIds(JSON.parse(storedFavs));
+                    }
+                } catch {}
             } catch (err) {
                 console.error('Failed to fetch data:', err);
             } finally {
@@ -86,9 +127,27 @@ function Dashboard() {
         fetchData();
     }, []);
 
+    // Format time for display
+    const formatTime = (seconds) => {
+        if (!seconds) return '—';
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
+    // Format date for display
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '—';
+        try {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+        } catch {
+            return dateStr;
+        }
+    };
+
     return (
         <>
-            {/* 🔴 ไฮไลต์เด็ด: ส่ง isLoggedIn={true} ไป เพื่อให้ Navbar เปลี่ยนโหมด! */}
             <Navbar isLoggedIn={true} />
             <AnimatedPage>
                 <div className="page-wrapper">
@@ -126,12 +185,7 @@ function Dashboard() {
                     {/* EXAM CARDS GRID */}
                     <div className="section-block">
                         <div className="flex-between mb-16">
-                            {/* =======================================
-              ส่วนหัวของ Section: ชุดข้อสอบของฉัน
-              ======================================= */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-
-                                {/* ฝั่งซ้าย: ไอคอนและชื่อหัวข้อ */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '1.4rem' }}>📋</span>
                                     <h2 style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--brown)', margin: 0 }}>
@@ -139,7 +193,6 @@ function Dashboard() {
                                     </h2>
                                 </div>
 
-                                {/* ฝั่งขวา: ปุ่มดูทั้งหมดแบบคลีนๆ */}
                                 <Link
                                     to="/all-exams"
                                     style={{
@@ -159,7 +212,6 @@ function Dashboard() {
                                 >
                                     ดูทั้งหมด <span style={{ fontSize: '1rem' }}>➔</span>
                                 </Link>
-
                             </div>
                         </div>
 
@@ -171,21 +223,50 @@ function Dashboard() {
                             <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--muted)' }}>
                                 <div style={{ fontSize: '3rem', marginBottom: '12px' }}>📝</div>
                                 <p>ยังไม่มีชุดข้อสอบ</p>
-
                             </div>
                         ) : (
                             <div className="grid-4">
-                                {examSets.map((exam) => (
-                                    <Link key={exam.id} to={`/exam-detail/${exam.id}`} className="exam-card">
-                                        <div className="exam-card-icon">📝</div>
-                                        <div className="exam-card-subject">{exam.subject_name || 'ไม่ระบุ'}</div>
-                                        <div className="exam-card-title">{exam.title}</div>
-                                        <div className="exam-card-desc">{exam.description || 'ไม่มีคำอธิบาย'}</div>
-                                        <div className="exam-card-meta">
-                                            <span>📝 {exam.question_count || 0} ข้อ</span>
-                                        </div>
-                                    </Link>
-                                ))}
+                                {examSets.map((exam) => {
+                                    const isFav = favoriteIds.includes(exam.id);
+                                    return (
+                                        <Link
+                                            key={exam.id}
+                                            to={`/exam-detail/${exam.id}`}
+                                            className="exam-card"
+                                            style={{ position: 'relative' }}
+                                        >
+                                            {/* Favorite Button */}
+                                            <button
+                                                onClick={(e) => toggleFavorite(e, exam.id)}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '12px',
+                                                    right: '12px',
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    fontSize: '1.3rem',
+                                                    cursor: 'pointer',
+                                                    zIndex: 2,
+                                                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
+                                                    transition: 'transform 0.15s'
+                                                }}
+                                                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.15)'}
+                                                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                            >
+                                                {isFav ? '❤️' : '🤍'}
+                                            </button>
+
+                                            <div className="exam-card-icon">📝</div>
+                                            <div className="exam-card-subject">{exam.subject_name || 'ไม่ระบุ'}</div>
+                                            <div className="exam-card-title">{exam.title}</div>
+                                            <div className="exam-card-desc">{exam.description || 'ไม่มีคำอธิบาย'}</div>
+                                            <div className="exam-card-meta">
+                                                <span>📝 {exam.question_count || 0} ข้อ</span>
+                                                <span>⏱️ {exam.duration || 0} นาที</span>
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -213,18 +294,41 @@ function Dashboard() {
                                                 </td>
                                             </tr>
                                         ) : (
-                                            recentActivity.map((activity, index) => (
-                                                <tr key={index}>
-                                                    <td>
-                                                        <div style={{ fontWeight: '600' }}>{activity.exam_title}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{activity.subject || ''}</div>
-                                                    </td>
-                                                    <td><span className="badge badge-green">{activity.score}/{activity.total}</span></td>
-                                                    <td style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>{activity.time_used || '—'}</td>
-                                                    <td style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>{activity.date || '—'}</td>
-                                                    <td><Link to="/result" className="btn btn-ghost btn-sm">ดูผล</Link></td>
-                                                </tr>
-                                            ))
+                                            recentActivity.map((activity, index) => {
+                                                const percent = activity.total > 0 ? Math.round((activity.score / activity.total) * 100) : 0;
+                                                const badgeColor = percent >= 80 ? 'badge-green' : percent >= 60 ? 'badge-honey' : 'badge-red';
+                                                return (
+                                                    <tr key={activity.id || index}>
+                                                        <td>
+                                                            <div style={{ fontWeight: '600' }}>{activity.exam_title || 'ไม่ระบุชื่อ'}</div>
+                                                            <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>📅 {formatDate(activity.finished_at)}</div>
+                                                        </td>
+                                                        <td>
+                                                            <span className={`badge ${badgeColor}`}>{activity.score}/{activity.total}</span>
+                                                        </td>
+                                                        <td style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>
+                                                            ⏱️ {formatTime(activity.time_used)}
+                                                        </td>
+                                                        <td style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>
+                                                            {formatDate(activity.finished_at)}
+                                                        </td>
+                                                        <td>
+                                                            <Link
+                                                                to="/result"
+                                                                state={{
+                                                                    examId: activity.exam_set_id,
+                                                                    score: activity.score,
+                                                                    total: activity.total,
+                                                                    timeUsed: activity.time_used
+                                                                }}
+                                                                className="btn btn-ghost btn-sm"
+                                                            >
+                                                                ดูผล
+                                                            </Link>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
                                         )}
                                     </tbody>
                                 </table>

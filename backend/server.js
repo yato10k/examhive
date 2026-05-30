@@ -455,12 +455,33 @@ app.post("/api/exam-sets/:id/attempts", authToken, async (req, res) => {
   }
 });
 
+// 15. บันทึกคะแนนสถิติโดยตรง (สำหรับ Frontend ที่คำนวณคะแนนเอง)
+app.post("/api/me/attempts", authToken, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const { exam_set_id, score, total, time_used } = req.body;
+
+    if (!exam_set_id || score === undefined || total === undefined) {
+      return res.status(400).json({ message: "ข้อมูลไม่ครบถ้วน" });
+    }
+
+    const [result] = await pool.query(
+      "INSERT INTO attempts (user_id, exam_set_id, score, total, time_used, finished_at) VALUES (?, ?, ?, ?, ?, NOW())",
+      [userId, exam_set_id, score, total, time_used || 0]
+    );
+
+    res.status(201).json({ message: "บันทึกคะแนนสำเร็จ", attempt_id: result.insertId });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // 16. ดูประวัติคะแนนย้อนหลัง (attempt history) ของผู้ใช้นั้น ๆ
 app.get("/api/me/attempts", authToken, async (req, res) => {
   try {
     const userId = req.user.user_id;
     const [rows] = await pool.query(
-      "SELECT a.*, e.title as exam_title FROM attempts a JOIN exam_sets e ON a.exam_set_id = e.id WHERE a.user_id = ? ORDER BY a.finished_at DESC",
+      "SELECT a.*, e.title as exam_title, s.name as subject_name FROM attempts a JOIN exam_sets e ON a.exam_set_id = e.id LEFT JOIN subjects s ON e.subject_id = s.id WHERE a.user_id = ? ORDER BY a.finished_at DESC",
       [userId]
     );
     res.json(rows);
